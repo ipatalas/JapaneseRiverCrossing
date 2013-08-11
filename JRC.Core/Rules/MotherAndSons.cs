@@ -19,7 +19,7 @@ namespace JRC.Core.Rules
 		{
 			if (peopleToValidate.Has(PersonType.Mother) && peopleToValidate.Has(PersonType.Son) && !peopleToValidate.Has(PersonType.Father))
 			{
-				throw new PersonConflictException(this, peopleToValidate.Get(PersonType.Mother), peopleToValidate.Get(PersonType.Son));
+				throw new PersonConflictException(this, peopleToValidate.GetOne(PersonType.Mother), peopleToValidate.GetOne(PersonType.Son));
 			}
 
 			return true;

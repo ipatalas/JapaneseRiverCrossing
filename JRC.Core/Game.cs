@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace JRC.Core
 {
+	using System.IO;
 	using Extensions;
 	using JRC.Core.Exceptions;
 
-    public class Game
-    {
+	public class Game : IGameState
+	{
 		#region [ Fields & Properties ]
 		private List<Person> source;
 		public IReadOnlyList<Person> Source
@@ -67,6 +68,11 @@ namespace JRC.Core
 			Move(destination, source, peopleToMove);
 		}
 
+		public void Save(Stream stream, DataFormat format)
+		{
+			format.SaveGame(this, stream);
+		}
+
 		private void Move(List<Person> sourceSide, List<Person> destinationSide, params Person[] peopleToMove)
 		{
 			if (sourceSide.Intersect(peopleToMove).Count() != peopleToMove.Length)
@@ -74,7 +80,14 @@ namespace JRC.Core
 				throw new InvalidOperationException("At least one person is not on the source side");
 			}
 
-			Rules.ForEach(r => r.Validate(peopleToMove, sourceSide));
+			var sourceToValidate = sourceSide.Except(peopleToMove).ToList();
+			var destinationToValidate = destinationSide.Union(peopleToMove).ToList();
+
+			Rules.ForEach(r =>
+			{
+				r.Validate(peopleToMove, sourceToValidate);
+				r.Validate(peopleToMove, destinationToValidate);
+			});
 
 			foreach (Person person in peopleToMove)
 			{

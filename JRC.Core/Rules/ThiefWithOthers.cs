@@ -17,9 +17,9 @@ namespace JRC.Core.Rules
 
 		public bool Validate(Person[] peopleToMove, IReadOnlyList<Person> peopleToValidate)
 		{
-			if (peopleToValidate.Has(PersonType.Thief) && !peopleToValidate.Has(PersonType.Policeman))
+			if (peopleToValidate.Count > 1 && peopleToValidate.Has(PersonType.Thief) && !peopleToValidate.Has(PersonType.Policeman))
 			{
-				throw new PersonConflictException(this, peopleToValidate.Get(PersonType.Father), peopleToValidate.Get(PersonType.Thief));
+				throw new PersonConflictException(this, peopleToValidate.First(), peopleToValidate.GetOne(PersonType.Thief));
 			}
 			
 			return true;

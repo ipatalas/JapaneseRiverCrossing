@@ -1,0 +1,7 @@
+/JRC.Core.UnitTests/bin
+/JRC.Core.UnitTests/obj
+/JRC.Core/bin
+/JRC.Core/obj
+/TestResults
+/*.suo
+/packages

@@ -8,6 +8,10 @@ using System.Linq;
 using JRC.Core.Extensions;
 using JRC.Core.Exceptions;
 using System.Collections.Generic;
+using JRC.Core.Rules;
+using FakeItEasy;
+using System.Text;
+using System.IO;
 
 namespace JRC.Core.UnitTests
 {
@@ -31,15 +35,98 @@ namespace JRC.Core.UnitTests
 		}
 
 		[Test]
-		public void Game_MoveValidPerson_DestinationContainsMovedPerson()
+		public void Game_MovePerson_DestinationContainsMovedPerson()
 		{
-			var game = CreateDefaultGame();
-			var father = game.Source.Single(p => p.Type == PersonType.Father);
+			var game = CreateGameWithSpecificRules();
+			var father = game.Source.GetOne(PersonType.Father);
 
 			game.MoveToDestination(father);
 
 			game.Source.Should().HaveCount(7);
 			game.Destination.Should().ContainSingle(p => p.Type == PersonType.Father);
+		}
+
+		[Test]
+		public void Game_MovePersonToDestination_RaftPositionChanged()
+		{
+			var game = CreateGameWithSpecificRules();
+			var father = game.Source.GetOne(PersonType.Father);
+
+			game.MoveToDestination(father);
+
+			game.RaftPosition.Should().Be(RaftPosition.Destination);
+		}
+
+		[Test]
+		public void Game_MovePersonToSource_RaftPositionChanged()
+		{
+			var game = CreateGameWithSpecificRules();
+			var father = game.Source.GetOne(PersonType.Father);
+
+			game.MoveToDestination(father);
+			game.MoveToSource(father);
+
+			game.RaftPosition.Should().Be(RaftPosition.Source);
+		}
+
+		[Test]
+		public void Game_MovePerson_SingleRuleIsCalledTwice()
+		{
+			var rule = A.Fake<IRule>();
+			var game = CreateGameWithSpecificRules(rule);
+			var father = game.Source.GetOne(PersonType.Father);
+			
+			game.MoveToDestination(father);
+
+			A.CallTo(rule).Where(x => x.Method.Name == "Validate").MustHaveHappened(Repeated.Exactly.Twice);
+		}
+
+		[Test]
+		public void Game_MoveFather_RuleGetsCalledWithProperArguments()
+		{
+			var rule = A.Fake<IRule>();
+			var game = CreateGameWithSpecificRules(rule);
+			var father = game.Source.GetOne(PersonType.Father);
+
+			var expectedPeopleToValidate = new List<Person>(game.Source);
+			expectedPeopleToValidate.Remove(father);
+
+			using (var scope = Fake.CreateScope())
+			{
+				// act
+				game.MoveToDestination(father);
+
+				using (scope.OrderedAssertions())
+				{
+					A.CallTo(() => rule.Validate(
+						A<Person[]>.That.IsSameSequenceAs(new[] { father }),
+						A<List<Person>>.That.IsSameSequenceAs(expectedPeopleToValidate)
+					)).MustHaveHappened(Repeated.Exactly.Once);
+
+					A.CallTo(() => rule.Validate(
+						A<Person[]>.That.IsSameSequenceAs(new[] { father }),
+						A<List<Person>>.That.IsSameSequenceAs(new[] { father })
+					)).MustHaveHappened(Repeated.Exactly.Once);
+				}
+			}
+		}
+
+		[Test]
+		public void Game_MovePersonAndBreakTheRule_ThrowsException()
+		{
+			var ex = new Exception();
+
+			var rule = A.Fake<IRule>();
+			A.CallTo(() => rule.Validate(null, null)).WithAnyArguments().Throws(ex);
+
+			var game = CreateGameWithSpecificRules(rule);
+			var father = game.Source.GetOne(PersonType.Father);
+
+
+			Action act = () => game.MoveToDestination(father);
+
+
+			act.ShouldThrow<Exception>().And.Should().Be(ex);
 		}
 
 		[Test]
@@ -51,18 +138,6 @@ namespace JRC.Core.UnitTests
 			Action act = () => game.MoveToDestination(person);
 
 			act.ShouldThrow<InvalidOperationException>();
-		}
-
-		[Test]
-		public void Game_MoveInvalidPerson_ThrowsRuleBrokenExceptionWithDriverRequired()
-		{
-			var game = CreateDefaultGame();
-			var son = game.Source.First(p => p.Type == PersonType.Son);
-
-			Action act = () => game.MoveToDestination(son);
-
-			act.ShouldThrow<RuleBrokenException>()
-				.And.Rule.Should().BeOfType<Rules.DriverRequired>();
 		}
 
 		[Test]
@@ -79,36 +154,10 @@ namespace JRC.Core.UnitTests
 		}
 
 		[Test]
-		public void Game_Move2Sons_ThrowsRuleBrokenWithDriverRequired()
-		{
-			var game = CreateDefaultGame();
-			var sons = game.Source.Where(p => p.Type == PersonType.Son).ToList();
-
-			Action act = () => game.MoveToDestination(sons[0], sons[1]);
-
-			act.ShouldThrow<RuleBrokenException>()
-				.And.Rule.Should().BeOfType<Rules.DriverRequired>();
-		}
-
-		[Test]
-		public void Game_MoveFatherAndSon_ThrowsConflictExceptionForRemainingSonAndMother()
-		{
-			var game = CreateDefaultGame();
-			var son = game.Source.Get(PersonType.Son);
-			var father = game.Source.Get(PersonType.Father);
-
-			Action act = () => game.MoveToDestination(father, son);
-
-			act.ShouldThrow<PersonConflictException>()
-				.Where(e => e.Rule is Rules.MotherAndSons)
-				.Where(e => e.Person1.Type == PersonType.Mother && e.Person2.Type == PersonType.Son);
-		}
-
-		[Test]
 		public void Game_MovePeopleWhenThereIsNoRaft_ThrowsRaftNotAvailableException()
 		{
 			var game = CreateDefaultGame();
-			var people = game.Source.Get2(PersonType.Policeman, PersonType.Thief);
+			var people = game.Source.GetTwo(PersonType.Policeman, PersonType.Thief);
 			game.MoveToDestination(people);
 
 			Action act = () => game.MoveToDestination(people);
@@ -120,7 +169,7 @@ namespace JRC.Core.UnitTests
 		public void Game_MovePeopleBackFromDestination_SourceContainThesePeopleAgain()
 		{
 			var game = CreateDefaultGame();
-			var people = game.Source.Get2(PersonType.Policeman, PersonType.Thief);
+			var people = game.Source.GetTwo(PersonType.Policeman, PersonType.Thief);
 			game.MoveToDestination(people);
 
 			game.MoveToSource(people);
@@ -129,35 +178,36 @@ namespace JRC.Core.UnitTests
 			game.Source.Should().Contain(people);
 		}
 
+		// Save game to a file (integration tests)
+
 		[Test]
-		public void Game_MovePeopleToCauseConflictOnDestination_ThrowsRuleBrokenException()
+		public void Game_SaveGame_DataFormatterCalledOnlyOnce()
 		{
 			var game = CreateDefaultGame();
-			var people = game.Source.Get2(PersonType.Policeman, PersonType.Thief);
-			game.MoveToDestination(people);
-			game.MoveToSource(people[0]);
+			var format = A.Fake<DataFormat>();
+			var ms = new MemoryStream();
 
-			Action act = () => game.MoveToDestination(game.Source.Get2(PersonType.Father, PersonType.Mother));
+			game.Save(ms, format);
 
-			act.ShouldThrow<RuleBrokenException>()
-				.And.Rule.Should().BeOfType<Rules.ThiefWithOthers>();
+			A.CallTo(() => format.SaveGame(A<Game>.That.IsEqualTo(game), A<Stream>.That.IsEqualTo(ms))).MustHaveHappened(Repeated.Exactly.Once);
 		}
 
 		private static Game CreateDefaultGame()
 		{
 			var rules = new IRule[] { 
-				new Rules._2PeopleLimit(), 
-				new Rules.DriverRequired(), 
-				new Rules.MotherAndSons(),
-				new Rules.ThiefWithOthers()
+				new _2PeopleLimit(), 
+				new DriverRequired(), 
+				new MotherAndSons(),
+				new ThiefWithOthers(),
+				new FatherAndDaughters()
 			};
 
 			return new Game(rules);
 		}
 
-		//private static Game CreateGameWithRules(params IRule[] rules)
-		//{
-		//	return new Game(rules);
-		//}
+		private static Game CreateGameWithSpecificRules(params IRule[] rules)
+		{
+			return new Game(rules);
+		}
 	}
 }
