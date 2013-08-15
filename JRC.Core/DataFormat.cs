@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
+using JRC.Core.DataFormats;
 
 namespace JRC.Core
 {
 	public abstract class DataFormat
 	{
-		public static DataFormat String = new JRC.Core.DataFormats.StringDataFormat();
-		public static DataFormat Xml = new JRC.Core.DataFormats.XmlDataFormat();
+		public static DataFormat String = new StringDataFormat();
+		public static DataFormat Xml = new XmlDataFormat();
 
 		abstract internal void SaveGame(IGameState game, Stream output);
 	}

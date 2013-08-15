@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using JRC.Core.Rules;
 using NUnit.Framework;
 using FluentAssertions;
@@ -13,9 +9,9 @@ namespace JRC.Core.UnitTests.Rules
 	[TestFixture]
 	public class ThiefWithOthersTests
 	{
-		Person thief = new Person(PersonType.Thief);
-		Person policeman = new Person(PersonType.Policeman);
-		Person son = new Person(PersonType.Son);
+		readonly Person thief = new Person(PersonType.Thief);
+		readonly Person policeman = new Person(PersonType.Policeman);
+		readonly Person son = new Person(PersonType.Son);
 
 		[Test]
 		public void Validate_GivenOnlyThief_ValidatesCorrectly()

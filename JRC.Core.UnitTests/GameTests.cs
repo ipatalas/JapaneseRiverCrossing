@@ -1,16 +1,12 @@
 ﻿using System;
 using NUnit.Framework;
 using FluentAssertions;
-using JRC.Core;
-using System.Diagnostics;
-using System.Reflection;
 using System.Linq;
 using JRC.Core.Extensions;
 using JRC.Core.Exceptions;
 using System.Collections.Generic;
 using JRC.Core.Rules;
 using FakeItEasy;
-using System.Text;
 using System.IO;
 
 namespace JRC.Core.UnitTests

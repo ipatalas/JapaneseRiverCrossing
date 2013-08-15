@@ -1,24 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace JRC.Core.DataFormats
 {
 	class XmlDataFormat : DataFormat
 	{
+		private readonly XmlWriterSettings settings = new XmlWriterSettings
+		{
+			Indent = true,
+			IndentChars = "\t",
+			NewLineChars = "\r\n",
+			Encoding = Encoding.ASCII,
+			OmitXmlDeclaration = true
+		};
+
 		internal override void SaveGame(IGameState game, Stream output)
 		{
-			var settings = new XmlWriterSettings();
-			settings.Indent =true;
-			settings.IndentChars = "\t";
-			settings.NewLineChars = "\r\n";
-			settings.Encoding = Encoding.ASCII;
-			settings.OmitXmlDeclaration = true;
-
 			using (var writer = XmlWriter.Create(output, settings))
 			{
 				writer.WriteStartElement("Game");

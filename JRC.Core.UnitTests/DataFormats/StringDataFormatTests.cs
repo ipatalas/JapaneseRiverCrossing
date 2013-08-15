@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FakeItEasy;
+﻿using System.IO;
+using FluentAssertions;
 using JRC.Core.DataFormats;
 using NUnit.Framework;
-using FluentAssertions;
 
 namespace JRC.Core.UnitTests.DataFormats
 {

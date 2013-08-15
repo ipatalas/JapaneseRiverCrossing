@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using JRC.Core.Rules;
 using NUnit.Framework;
 using FluentAssertions;
@@ -13,8 +9,8 @@ namespace JRC.Core.UnitTests.Rules
 	[TestFixture]
 	public class DriverRequiredTests
 	{
-		Person driver = new Person(PersonType.Father);
-		Person nonDriver = new Person(PersonType.Son);
+		readonly Person driver = new Person(PersonType.Father);
+		readonly Person nonDriver = new Person(PersonType.Son);
 
 		[Test]
 		public void Rule_Message()

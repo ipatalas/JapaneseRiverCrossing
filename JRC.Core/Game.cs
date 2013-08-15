@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JRC.Core
 {
 	using System.IO;
-	using Extensions;
-	using JRC.Core.Exceptions;
+	using Exceptions;
 
 	public class Game : IGameState
 	{
 		#region [ Fields & Properties ]
-		private List<Person> source;
+		private readonly List<Person> source;
 		public IReadOnlyList<Person> Source
 		{
 			get
@@ -22,7 +19,7 @@ namespace JRC.Core
 			}
 		}
 
-		private List<Person> destination;
+		private readonly List<Person> destination;
 		public IReadOnlyList<Person> Destination
 		{
 			get
@@ -31,7 +28,7 @@ namespace JRC.Core
 			}
 		}
 
-		private List<IRule> Rules;
+		private readonly List<IRule> Rules;
 
 		public RaftPosition RaftPosition { get; private set; }
 		#endregion
@@ -107,14 +104,7 @@ namespace JRC.Core
 
 		private void MoveRaftPosition()
 		{
-			if (RaftPosition == RaftPosition.Destination)
-			{
-				RaftPosition = RaftPosition.Source;
-			}
-			else
-			{
-				RaftPosition = RaftPosition.Destination;
-			}
+			RaftPosition = RaftPosition == RaftPosition.Destination ? RaftPosition.Source : RaftPosition.Destination;
 		}
 	}
 }
